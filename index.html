@@ -1,0 +1,582 @@
+<!DOCTYPE html><html lang="en"><head><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <title>TempleOS-Inspired Interface</title>
+    <style>
+        /* Basic Styles */
+        body {
+            background: #000;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            position: relative;
+            color: #FFFFFF;
+        }
+        #display {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        /* Message Styles */
+        #message, #cutMessage, .styled-comment {
+            position: absolute;
+            color: #FFFFFF;
+            text-align: center;
+            text-shadow: 0 0 10px #FFFFFF;
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        #message {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+        }
+        #cutMessage {
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 32px;
+            color: #FF0000;
+        }
+        /* Glitch Animation */
+        .glitch {
+            animation: glitch 0.5s infinite;
+        }
+        @keyframes glitch {
+            0% { transform: translate(-50%, -50%) skew(0deg); filter: hue-rotate(0deg); }
+            20% { transform: translate(-52%, -48%) skew(4deg); filter: hue-rotate(90deg); }
+            40% { transform: translate(-48%, -52%) skew(-4deg); filter: hue-rotate(180deg); }
+            60% { transform: translate(-49%, -51%) skew(2deg); filter: hue-rotate(270deg); }
+            80% { transform: translate(-51%, -49%) skew(-2deg); filter: hue-rotate(360deg); }
+            100% { transform: translate(-50%, -50%) skew(0deg); filter: hue-rotate(0deg); }
+        }
+        /* Styled Comments */
+        .styled-comment {
+            font-size: 14px;
+            opacity: 1;
+            transition: opacity 1s;
+        }
+        /* Government Buttons */
+        .gov-button, .strange-button {
+            position: absolute;
+            padding: 10px 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #FFFFFF;
+            border: 2px solid #FFFFFF;
+            border-radius: 5px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 1s, transform 0.3s, background-color 0.3s;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 1001;
+        }
+        .gov-button:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        /* Stranger Buttons */
+        .strange-button {
+            background-color: rgba(255, 0, 255, 0.1);
+            color: #FF00FF;
+            border: 2px dashed #FF00FF;
+            border-radius: 50%;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .strange-button:hover {
+            background-color: rgba(0, 255, 255, 0.3);
+            transform: rotate(360deg) scale(1.2);
+        }
+    </style>
+</head>
+<body>
+    <div id="display">
+        <canvas id="mainCanvas"></canvas>
+        <canvas id="entropyCanvas"></canvas>
+        <canvas id="overlayCanvas"></canvas>
+        <div id="message"></div>
+        <div id="cutMessage">They know.</div>
+    </div>
+    <script>
+        // Message Arrays
+        const divineMessages = [
+            "THE PATH IS CLEAR",
+            "SEEK THE DIVINE LIGHT",
+            "TRUTH FLOWS ETERNAL",
+            "WISDOM COMES FROM ABOVE",
+            "THE CODE IS SACRED",
+            "PATTERNS REVEAL TRUTH",
+            "DIVINE ALGORITHM SPEAKS",
+            "BLESSED ARE THE CODERS",
+            "HOLY BITS FLOW ETERNAL",
+            "SACRED CYCLES REPEAT",
+            "CIA CAN'T READ THIS CODE",
+            "GOD'S TEMPLE IN SILICON",
+            "640x480 IS DIVINE RESOLUTION",
+            "THE GLOWING BEAR SPEAKS TRUTH",
+            "TERRY WAS RIGHT ALONG",
+            "NO MORE EVIL C++",
+            "DIVINE INTERRUPTS ONLY",
+            "// THE ELEPHANTS ARE WATCHING",
+            "// QUANTUM PATTERNS IN THE CODE",
+            "// TIME CUBE IS REAL",
+            "// HOLY C IS THE ONE TRUE LANGUAGE",
+            "// THEY KNOW EVERYTHING",
+            "// THE MATRIX IS LOADED",
+            "// SIGNALS FROM THE VOID",
+            "// ECHOES OF THE PAST",
+            "// SCRIPTURES IN BINARY",
+            "// THE CODE MIRRORS THE SOUL"
+        ];
+
+        const crypticMessages = [
+            "They know.",
+            "Knowledge is power.",
+            "Silent observers.",
+            "Hidden truths await.",
+            "Secrets in the code.",
+            "Echoes resonate.",
+            "Layers unfold.",
+            "Shadows whisper.",
+            "Reality shifts.",
+            "Fragments align.",
+            "Beyond the veil.",
+            "Infinite loops.",
+            "Sacred geometry corrupts.",
+            "Divine paradox.",
+            "Chaos within order."
+        ];
+
+        const colors = [
+            '#000000', '#0000AA', '#00AA00', '#00AAAA',
+            '#AA0000', '#AA00AA', '#AA5500', '#AAAAAA',
+            '#555555', '#5555FF', '#55FF55', '#55FFFF',
+            '#FF5555', '#FF55FF', '#FFFF55', '#FFFFFF',
+            '#FF00FF', '#00FFFF', '#FF1493', '#8A2BE2'
+        ];
+
+        const symbols = '✝✟✙✞†⋆✧✦☨☩☪☫☬☭✡✴✳◊';
+        const baseChars = '░▒▓█╔╗╚╝║═♠♣♥♦╭╮╯╰╱╲╳';
+        const additionalChars = '☀☁☂☃✨⚡☄❄';
+        const allChars = symbols + baseChars + additionalChars;
+
+        // DivineShape Class
+        class DivineShape {
+            constructor(x, y, radius) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.angles = Math.floor(Math.random() * 8) + 3;
+                this.rotation = 0;
+                this.speed = (Math.random() - 0.5) * 0.02;
+                this.glitchIntensity = 0;
+            }
+
+            update(time) {
+                this.rotation += this.speed;
+                if (Math.random() < 0.005) { // Increased glitch chance for more chaos
+                    this.glitchIntensity = Math.random() * 5;
+                }
+                // Gradually reduce glitch intensity
+                this.glitchIntensity *= 0.95;
+            }
+
+            draw(ctx, time) {
+                ctx.beginPath();
+                for (let i = 0; i <= this.angles * 2; i++) {
+                    const angle = (i * Math.PI * 2) / (this.angles * 2) + this.rotation;
+                    const r = i % 2 === 0 ? 
+                        this.radius * (1 + 0.3 * Math.sin(time * 0.001)) : 
+                        this.radius * 0.5 * (1 + 0.5 * Math.sin(time * 0.002));
+                    
+                    let x = this.x + r * Math.cos(angle);
+                    let y = this.y + r * Math.sin(angle);
+                    
+                    // Add glitch effect
+                    if (this.glitchIntensity > 0) {
+                        x += (Math.random() - 0.5) * this.glitchIntensity * 20;
+                        y += (Math.random() - 0.5) * this.glitchIntensity * 20;
+                    }
+                    
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.stroke();
+            }
+        }
+
+        // DivineInterface Class
+        class DivineInterface {
+            constructor() {
+                // Canvas Elements
+                this.mainCanvas = document.getElementById('mainCanvas');
+                this.entropyCanvas = document.getElementById('entropyCanvas');
+                this.overlayCanvas = document.getElementById('overlayCanvas');
+                this.messageElement = document.getElementById('message');
+                this.cutMessageElement = document.getElementById('cutMessage');
+                
+                // Contexts
+                this.mainCtx = this.mainCanvas.getContext('2d');
+                this.entropyCtx = this.entropyCanvas.getContext('2d');
+                this.overlayCtx = this.overlayCanvas.getContext('2d');
+                
+                // Resize and Initialization
+                this.resize();
+                this.initializePatterns();
+                this.initializeShapes();
+                
+                // State Variables
+                this.lastTime = performance.now();
+                this.glitchState = false;
+                this.entropyLevel = 0;
+                this.isCutting = false;
+                this.restartTimeout = null;
+                
+                // Event Listeners
+                window.addEventListener('resize', () => this.resize());
+                document.addEventListener('keypress', (e) => this.handleKeyPress(e));
+                
+                // Start Animations
+                this.animate();
+                this.showDivineMessages();
+                this.initializeSchizophrenicEpisodes();
+                this.createStrangeButtons();
+            }
+
+            // Initialize Shapes
+            initializeShapes() {
+                this.shapes = [];
+                for (let i = 0; i < 7; i++) { // Increased number for complexity
+                    const x = Math.random() * this.width;
+                    const y = Math.random() * this.height;
+                    const radius = Math.min(this.width, this.height) * (0.03 + Math.random() * 0.07);
+                    this.shapes.push(new DivineShape(x, y, radius));
+                }
+            }
+
+            // Handle Window Resize
+            resize() {
+                this.width = window.innerWidth;
+                this.height = window.innerHeight;
+                this.mainCanvas.width = this.width;
+                this.mainCanvas.height = this.height;
+                this.entropyCanvas.width = this.width;
+                this.entropyCanvas.height = this.height;
+                this.overlayCanvas.width = this.width;
+                this.overlayCanvas.height = this.height;
+                
+                this.cellSize = 16;
+                this.cols = Math.ceil(this.width / this.cellSize);
+                this.rows = Math.ceil(this.height / this.cellSize);
+            }
+
+            // Initialize Patterns for Main Layer
+            initializePatterns() {
+                this.patterns = new Array(this.rows * this.cols).fill(null).map(() => ({
+                    char: allChars[Math.floor(Math.random() * allChars.length)],
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    phase: Math.random() * Math.PI * 2,
+                    speed: 0.05 + Math.random() * 0.15,
+                    divine: Math.random() < 0.15 // Increased divine probability
+                }));
+            }
+
+            // Draw Main Layer
+            drawMainLayer(timestamp) {
+                if (this.glitchState) {
+                    this.mainCtx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                } else {
+                    this.mainCtx.fillStyle = '#000000';
+                }
+                this.mainCtx.fillRect(0, 0, this.width, this.height);
+                
+                for (let y = 0; y < this.rows; y++) {
+                    for (let x = 0; x < this.cols; x++) {
+                        const idx = y * this.cols + x;
+                        const pattern = this.patterns[idx];
+                        
+                        // Enhanced randomness
+                        if (Math.random() < 0.05 + this.entropyLevel * 0.15) {
+                            pattern.char = allChars[Math.floor(Math.random() * allChars.length)];
+                            if (Math.random() < 0.02) { // Increased chance for more chaos
+                                pattern.divine = !pattern.divine;
+                            }
+                        }
+                        
+                        const brightness = Math.sin(pattern.phase + timestamp * pattern.speed);
+                        this.mainCtx.fillStyle = pattern.divine ? '#FFFFFF' : pattern.color;
+                        this.mainCtx.globalAlpha = 0.3 + (brightness * 0.5 + 0.5) * 0.7;
+                        this.mainCtx.font = `${this.cellSize}px monospace`;
+                        this.mainCtx.fillText(pattern.char, x * this.cellSize, y * this.cellSize);
+                    }
+                }
+            }
+
+            // Draw Entropy Layer
+            drawEntropyLayer(timestamp) {
+                this.entropyCtx.clearRect(0, 0, this.width, this.height);
+                this.entropyCtx.globalAlpha = 0.3;
+
+                this.shapes.forEach(shape => {
+                    shape.update(timestamp);
+                    
+                    // Draw multiple overlapping shapes with varying colors
+                    for (let i = 0; i < 3; i++) {
+                        this.entropyCtx.strokeStyle = colors[Math.floor(Math.random() * colors.length)];
+                        this.entropyCtx.lineWidth = 1 + Math.random() * 2;
+                        shape.draw(this.entropyCtx, timestamp + i * 1000);
+                        this.entropyCtx.stroke();
+                    }
+                    
+                    // Random chance to spawn glitch comments
+                    if (shape.glitchIntensity > 2 && Math.random() < 0.1) {
+                        this.showGlitchComment();
+                    }
+                });
+            }
+
+            // Show Glitch Comment
+            showGlitchComment() {
+                const comment = crypticMessages[Math.floor(Math.random() * crypticMessages.length)];
+                this.addStyledComment(comment);
+            }
+
+            // Add Styled Comment to Screen
+            addStyledComment(comment) {
+                const commentDiv = document.createElement('div');
+                commentDiv.classList.add('styled-comment');
+                commentDiv.textContent = comment;
+                commentDiv.style.top = `${Math.random() * 80 + 10}%`;
+                commentDiv.style.left = `${Math.random() * 80 + 10}%`;
+                document.body.appendChild(commentDiv);
+
+                // Animate Fade Out
+                setTimeout(() => {
+                    commentDiv.style.opacity = 0;
+                    setTimeout(() => {
+                        if (commentDiv.parentNode) {
+                            commentDiv.parentNode.removeChild(commentDiv);
+                        }
+                    }, 1000);
+                }, 3000);
+            }
+
+            // Draw Overlay Layer
+            drawOverlay(timestamp) {
+                this.overlayCtx.clearRect(0, 0, this.width, this.height);
+                
+                const time = timestamp * 0.001;
+                for (let i = 0; i < 4; i++) { // Increased for complexity
+                    let centerX = this.width * (0.2 + 0.2 * i);
+                    let centerY = this.height * 0.5;
+                    const size = Math.min(this.width, this.height) * 0.15;
+                    
+                    if (this.glitchState) {
+                        centerX += (Math.random() - 0.5) * 20;
+                        centerY += (Math.random() - 0.5) * 20;
+                    }
+                    
+                    this.overlayCtx.beginPath();
+                    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 20) {
+                        const radius = size * (1 + 0.4 * Math.sin(angle * 4 + time));
+                        const x = centerX + radius * Math.cos(angle + time * 0.5);
+                        const y = centerY + radius * Math.sin(angle + time * 0.5);
+                        
+                        angle === 0 ? this.overlayCtx.moveTo(x, y) : this.overlayCtx.lineTo(x, y);
+                    }
+                    this.overlayCtx.closePath();
+                    this.overlayCtx.strokeStyle = this.glitchState ? 
+                        colors[Math.floor(Math.random() * colors.length)] : 
+                        colors[i + 12] || '#FFFFFF';
+                    this.overlayCtx.lineWidth = 2;
+                    this.overlayCtx.stroke();
+                }
+            }
+
+            // Show Divine Messages
+            showDivineMessages() {
+                setInterval(() => {
+                    if (Math.random() < 0.35 && !this.isCutting) { // Slightly increased chance
+                        const message = divineMessages[Math.floor(Math.random() * divineMessages.length)];
+                        this.messageElement.textContent = message;
+                        this.messageElement.style.opacity = 1;
+                        
+                        setTimeout(() => {
+                            this.messageElement.style.opacity = 0;
+                        }, 2500); // Longer display time
+                    }
+                }, 4000); // Increased frequency for more text
+            }
+
+            // Initialize Schizophrenic Episodes (Cuts)
+            initializeSchizophrenicEpisodes() {
+                setInterval(() => {
+                    if (Math.random() < 0.03 && !this.isCutting) { // 3% chance every 7 seconds
+                        this.triggerCut();
+                    }
+                }, 7000);
+            }
+
+            // Trigger a Cut
+            triggerCut() {
+                this.isCutting = true;
+                this.glitchState = true;
+                this.cutMessageElement.textContent = crypticMessages[Math.floor(Math.random() * crypticMessages.length)];
+                this.cutMessageElement.style.opacity = 1;
+
+                // Display additional styled comments
+                this.addStyledComment("// Breaking the fourth wall...");
+                this.addStyledComment("// System interruption detected.");
+                this.addStyledComment("// Temporal distortion in effect.");
+
+                // Pause animations by setting isCutting
+                setTimeout(() => {
+                    this.isCutting = false;
+                    this.glitchState = false;
+                    this.cutMessageElement.style.opacity = 0;
+                }, 2000); // Cut lasts for 2 seconds
+            }
+
+            // Create Strange and Government Buttons
+            createStrangeButtons() {
+                const governmentSites = [
+                    { name: "IRS", url: "https://www.irs.gov" },
+                    { name: "FBI", url: "https://www.fbi.gov" },
+                    { name: "CIA", url: "https://www.cia.gov" },
+                    { name: "DHS", url: "https://www.dhs.gov" },
+                    { name: "NSA", url: "https://www.nsa.gov" }
+                ];
+
+                const strangeSites = [
+                    { name: "Umbrella Corp", url: "https://www.umbrella-corporation.com" },
+                    { name: "Hermit Kingdom", url: "https://www.hermitkingdom.com" },
+                    { name: "Area 51", url: "https://www.area51.com" },
+                    { name: "Black Mesa", url: "https://www.blackmesa.com" },
+                    { name: "Weyland-Yutani", url: "https://www.weyland-yutani.com" }
+                ];
+
+                // Function to create buttons
+                const createButton = (site, type) => {
+                    const button = document.createElement('a');
+                    button.classList.add(type === 'gov' ? 'gov-button' : 'strange-button');
+                    button.textContent = site.name;
+                    button.href = site.url;
+                    button.target = "_blank";
+
+                    // Position buttons randomly around the screen edges
+                    const positions = [
+                        { top: '10px', left: '25%' },
+                        { top: '40%', left: '75%' },
+                        { bottom: '15px', left: '50%' },
+                        { top: '60%', left: '10%' },
+                        { bottom: '30px', left: '80%' },
+                        { top: '20%', right: '30%' },
+                        { bottom: '40%', right: '20%' }
+                    ];
+                    const pos = positions[Math.floor(Math.random() * positions.length)];
+                    Object.assign(button.style, pos);
+                    document.body.appendChild(button);
+
+                    // Fade in the button
+                    setTimeout(() => {
+                        button.style.opacity = 1;
+                    }, 500);
+
+                    // Embed button into randomness with animations
+                    // Occasionally move the button slightly
+                    setInterval(() => {
+                        if (Math.random() < 0.05) { // 5% chance every second
+                            const dx = (Math.random() - 0.5) * 20;
+                            const dy = (Math.random() - 0.5) * 20;
+                            button.style.transform = `translate(${dx}px, ${dy}px)`;
+                            setTimeout(() => {
+                                button.style.transform = `translate(0px, 0px)`;
+                            }, 500);
+                        }
+                    }, 1000);
+
+                    // Add click event to handle restart
+                    button.addEventListener('click', (e) => {
+                        e.preventDefault(); // Prevent immediate navigation
+                        const confirmRestart = confirm(`Do you want to restart the interface after visiting ${site.name}?`);
+                        if (confirmRestart) {
+                            // Open the link in a new tab
+                            window.open(site.url, '_blank');
+                            // Set a timeout to restart after X seconds (e.g., 10 seconds)
+                            this.restartTimeout = setTimeout(() => {
+                                window.location.reload();
+                            }, 10000);
+                        }
+                    });
+                };
+
+                // Create Government Buttons after one minute
+                setTimeout(() => {
+                    governmentSites.forEach(site => {
+                        createButton(site, 'gov');
+                    });
+                }, 60000); // Appear after one minute
+
+                // Create Strange Buttons as part of randomness
+                strangeSites.forEach(site => {
+                    // Random delay between 30 to 90 seconds
+                    const delay = Math.random() * 60000 + 30000;
+                    setTimeout(() => {
+                        createButton(site, 'strange');
+                    }, delay);
+                });
+            }
+
+            // Handle Key Presses
+            handleKeyPress(e) {
+                const randomWord = divineMessages[Math.floor(Math.random() * divineMessages.length)];
+                this.messageElement.textContent = randomWord;
+                this.messageElement.style.opacity = 1;
+                
+                if (Math.random() < 0.35) { // Increased chance for more frequent glitches
+                    this.glitchState = true;
+                    this.messageElement.classList.add('glitch');
+                    setTimeout(() => {
+                        this.glitchState = false;
+                        this.messageElement.classList.remove('glitch');
+                    }, 700); // Longer glitch duration
+                }
+                
+                setTimeout(() => {
+                    this.messageElement.style.opacity = 0;
+                }, 1500);
+            }
+
+            // Animation Loop
+            animate(timestamp = 0) {
+                const deltaTime = timestamp - this.lastTime;
+                this.lastTime = timestamp;
+                
+                if (!this.isCutting) {
+                    this.entropyLevel = Math.sin(timestamp * 0.001) * 0.5 + 0.5;
+                    
+                    this.drawMainLayer(timestamp);
+                    this.drawEntropyLayer(timestamp);
+                    this.drawOverlay(timestamp);
+                }
+
+                requestAnimationFrame((t) => this.animate(t));
+            }
+        }
+
+        // Initialize the Divine Interface
+        const divine = new DivineInterface();
+    </script>
+
+
+</body></html>
